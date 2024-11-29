@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 This script performs data extraction, cleaning, and standardization for datasets from the Business Department and Customer Management Department. The script handles various tasks such as dropping unnecessary columns, standardizing IDs, cleaning names, resolving duplicates, and more.
 
 File Paths
@@ -107,3 +108,9 @@ print("\nUser Job after standardization:")
 print(df_user_job.head(10))
 
 This README provides an overview of the functions and their purposes, as well as instructions on how to use the script to clean and standardize the data.
+=======
+# ETL-Pipelines
+Data Warehouse project code
+
+# Change 'main' to master
+>>>>>>> 89758b9ba261d76af6dc6c40bc26d63c99fca321
