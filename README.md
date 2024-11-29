@@ -76,30 +76,41 @@ keep: Specifies which duplicates to keep. Default is 'first'.
 
 
 # Usage
-1. Load the datasets:
-   
+1. **Load the datasets:**
+```python
 df_product_list = pd.read_excel(product_list_path)
 df_user_credit_card = pd.read_pickle(user_credit_card_path)
 df_user_data = pd.read_json(user_data_path)
 df_user_job = pd.read_csv(user_job_path)
+```
 
-2. Apply Business Department Functions:
+2. **Apply Business Department Functions:**
+
+```python
 df_product_list = clean_product_list(df_product_list)
 df_product_list = clean_product_type(df_product_list)
 df_product_list = standardize_price(df_product_list)
+```
 
 3. Apply Customer Department Functions:
+
+```python
 df_user_credit_card = clean_user_credit_card(df_user_credit_card)
 df_user_data = clean_user_data(df_user_data)
 df_user_job = clean_user_job(df_user_job)
+```
 
 4. Check and resolve duplicates:
+   
+```python
 df_product_list = check_and_resolve_duplicates(df_product_list, subset=['product_name'])
 df_user_credit_card = check_and_resolve_duplicates(df_user_credit_card, subset=['credit_card_number', 'issuing_bank'])
 df_user_data = check_and_resolve_duplicates(df_user_data, subset=['user_id'])
 df_user_job = check_and_resolve_duplicates(df_user_job, subset=['user_id'])
-
+```
 5. Verify the changes:
+
+```python
 print("\nProduct List after standardization:")
 print(df_product_list.head(10))
 
@@ -111,5 +122,6 @@ print(df_user_data.head(10))
 
 print("\nUser Job after standardization:")
 print(df_user_job.head(10))
+```
 
 ###### This README provides an overview of the functions and their purposes, as well as instructions on how to use the script to clean and standardize the data.
