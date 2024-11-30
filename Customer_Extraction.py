@@ -2,85 +2,149 @@ import pandas as pd
 import logging
 
 # Configure logging
-logging.basicConfig(filename='business_department.log', level=logging.INFO, 
+logging.basicConfig(filename='customer_management_department.log', level=logging.INFO, 
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
-# File path
-product_list_path = r'Business_Department\product_list.xlsx'
+# File paths
+user_credit_card_path = r'Customer_Management_Department\user_credit_card.pickle'
+user_data_path = r'Customer_Management_Department\user_data.json'
+user_job_path = r'Customer_Management_Department\user_job.csv'
 
-# Load the dataset
+# Load the datasets
 try:
-    df_product_list = pd.read_excel(product_list_path)
-    logging.info("Loaded product_list.xlsx successfully.")
+    df_user_credit_card = pd.read_pickle(user_credit_card_path)
+    logging.info("Loaded user_credit_card.pickle successfully.")
 except Exception as e:
-    logging.error(f"Error loading product_list.xlsx: {e}")
+    logging.error(f"Error loading user_credit_card.pickle: {e}")
 
-# Business Department Functions
-def clean_product_list(df):
+try:
+    df_user_data = pd.read_json(user_data_path)
+    logging.info("Loaded user_data.json successfully.")
+except Exception as e:
+    logging.error(f"Error loading user_data.json: {e}")
+
+try:
+    df_user_job = pd.read_csv(user_job_path)
+    logging.info("Loaded user_job.csv successfully.")
+except Exception as e:
+    logging.error(f"Error loading user_job.csv: {e}")
+
+# Customer Department Functions
+def clean_user_credit_card(df):
+    # Clean user_id
+    def clean_user_id(user_id):
+        if isinstance(user_id, str):
+            user_id = user_id.replace(" ", "").replace("-", "").upper()
+            user_id = 'U' + user_id[1:]
+        return user_id
+
+    df['user_id'] = df['user_id'].apply(clean_user_id)
+
+    # Clean name
+    def clean_name(name):
+        if isinstance(name, str):
+            name = name.strip().title()
+            name = name.replace(".", ". ").replace("-", "- ")
+        return name
+
+    df['name'] = df['name'].apply(clean_name)
+    
+    return df
+
+def clean_user_data(df):
+    # Clean user_id
+    def clean_user_id(user_id):
+        if isinstance(user_id, str):
+            user_id = user_id.replace(" ", "").replace("-", "").upper()
+            user_id = 'U' + user_id[1:]
+        return user_id
+
+    df['user_id'] = df['user_id'].apply(clean_user_id)
+
+    # Standardize creation_date and birthdate to YYYY-MM-DDTHH:MM:SS format
+    def standardize_date(date):
+        try:
+            return pd.to_datetime(date).strftime('%Y-%m-%dT%H:%M:%S')
+        except ValueError:
+            return 'Invalid Data'
+
+    df['creation_date'] = df['creation_date'].apply(standardize_date)
+    df['birthdate'] = df['birthdate'].apply(standardize_date)
+
+    # Clean name
+    def clean_name(name):
+        if isinstance(name, str):
+            name = name.strip().title()
+            name = name.replace(".", ". ").replace("-", "- ")
+        return name
+
+    df['name'] = df['name'].apply(clean_name)
+
+    # Capitalize country names
+    df['country'] = df['country'].apply(lambda x: x.upper() if isinstance(x, str) else x)
+    
+    return df
+
+def clean_user_job(df):
     # Drop the first column
     df = df.drop(df.columns[0], axis=1)
-    
-    # Clean product_id
-    def clean_product_id(product_id):
-        if isinstance(product_id, str):
-            product_id = product_id.replace(" ", "").replace("-", "").upper()
-            product_id = 'P' + product_id[7:]
-        return product_id
 
-    df['product_id'] = df['product_id'].apply(clean_product_id)
+    # Clean user_id
+    def clean_user_id(user_id):
+        if isinstance(user_id, str):
+            user_id = user_id.replace(" ", "").replace("-", "").upper()
+            user_id = 'U' + user_id[1:]
+        return user_id
 
-    # Get duplicate product IDs
-    duplicate_product_ids = df[df.duplicated(['product_id'], keep=False)]
+    df['user_id'] = df['user_id'].apply(clean_user_id)
 
-    # Generate new unique IDs for duplicate product_id entries
-    def generate_unique_id(existing_ids):
-        max_id = max([int(id[1:]) for id in existing_ids if id.startswith('P')])
-        new_id = f'P{max_id + 1:05d}'
-        return new_id
+    # Clean name
+    def clean_name(name):
+        if isinstance(name, str):
+            name = name.strip().title()
+            name = name.replace(".", ". ").replace("-", "- ")
+        return name
 
-    existing_ids = set(df['product_id'])
-    for index, row in duplicate_product_ids.iterrows():
-        new_id = generate_unique_id(existing_ids)
-        df.at[index, 'product_id'] = new_id
-        existing_ids.add(new_id)
-
-    # Clean product_name
-    def clean_product_name(product_name):
-        return product_name.strip().title()
-
-    df['product_name'] = df['product_name'].apply(clean_product_name)
+    df['name'] = df['name'].apply(clean_name)
     
     return df
 
-def clean_product_type(df):
-    # Fill null values in product_type with 'Unknown'
-    df['product_type'] = df['product_type'].fillna('Unknown')
+# Function to check for duplicates in any DataFrame
+def check_and_resolve_duplicates(df, subset):
+    # Identify duplicates
+    duplicates = df[df.duplicated(subset=subset, keep=False)]
+    logging.info(f"Duplicates in {subset}: {duplicates}")
 
-    # Custom function to capitalize words except "and"
-    def capitalize_except_and(product_type):
-        words = product_type.split()
-        capitalized_words = [word.capitalize() if word.lower() != 'and' else word.lower() for word in words]
-        return ' '.join(capitalized_words)
-
-    df['product_type'] = df['product_type'].apply(capitalize_except_and)
-    
+    # Resolve duplicates by keeping the first occurrence
+    df = df.drop_duplicates(subset=subset, keep='first')
     return df
 
-def standardize_price(df):
-    df['price'] = df['price'].round(2)
-    return df
-
-# Apply Business Department Functions
+# Apply Customer Department Functions
 try:
-    df_product_list = clean_product_list(df_product_list)
-    logging.info("Cleaned product_list successfully.")
-    df_product_list = clean_product_type(df_product_list)
-    logging.info("Cleaned product_type successfully.")
-    df_product_list = standardize_price(df_product_list)
-    logging.info("Standardized price successfully.")
+    df_user_credit_card = clean_user_credit_card(df_user_credit_card)
+    logging.info("Cleaned user_credit_card successfully.")
+    df_user_data = clean_user_data(df_user_data)
+    logging.info("Cleaned user_data successfully.")
+    df_user_job = clean_user_job(df_user_job)
+    logging.info("Cleaned user_job successfully.")
 except Exception as e:
-    logging.error(f"Error processing product_list: {e}")
+    logging.error(f"Error processing customer data: {e}")
+
+# Check and resolve duplicates
+try:
+    df_user_credit_card = check_and_resolve_duplicates(df_user_credit_card, subset=['user_id', 'credit_card_number'])
+    df_user_data = check_and_resolve_duplicates(df_user_data, subset=['user_id'])
+    df_user_job = check_and_resolve_duplicates(df_user_job, subset=['user_id'])
+    logging.info("Checked and resolved duplicates successfully.")
+except Exception as e:
+    logging.error(f"Error checking and resolving duplicates: {e}")
 
 # Verify the changes
-print("\nProduct List after standardization:")
-print(df_product_list.head(10))
+print("\nUser Credit Card after standardization:")
+print(df_user_credit_card.head(10))
+
+print("\nUser Data after standardization:")
+print(df_user_data.head(10))
+
+print("\nUser Job after standardization:")
+print(df_user_job.head(10))
